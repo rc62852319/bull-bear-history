@@ -9,15 +9,16 @@ headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36"
 }
 
+# Fetch HTML
 html = requests.get(url, headers=headers).text
 soup = BeautifulSoup(html, "html.parser")
 
 rows = []
 
-# Find the CBBC outstanding table
+# Find the CBBC outstanding table (first table on the page)
 table = soup.find("table")
 
-# Extract table rows
+# Extract table rows (price range, bull, bear)
 for tr in table.find_all("tr"):
     cols = [td.get_text(strip=True) for td in tr.find_all("td")]
     if len(cols) == 3:
@@ -34,3 +35,18 @@ if last_close_el:
 else:
     rows.append(["上日收市價", "N/A", ""])
 
+# -----------------------------
+# ⭐ DATE + SAVE SECTION
+# -----------------------------
+
+# Use Hong Kong date
+hk_time = datetime.utcnow() + timedelta(hours=8)
+
+# TEMPORARY OVERRIDE FOR TESTING
+today = "2026-04-17"   # ← Force new file for testing
+
+# Normally you would use:
+# today = hk_time.strftime("%Y-%m-%d")
+
+# Save JSON file
+with open(f"data/{today}.json
