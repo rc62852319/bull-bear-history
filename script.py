@@ -7,7 +7,7 @@ url = "https://www.jpmhkwarrants.com/zh_hk/cbbc/cbbc-outstanding/HSI"
 html = requests.get(url).text
 soup = BeautifulSoup(html, "html.parser")
 
-table = soup.find("table")
+table = soup.find("table", {"class": "table table-striped table-hover"})
 rows = []
 
 for tr in table.find_all("tr"):
