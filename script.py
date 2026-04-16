@@ -12,20 +12,19 @@ headers = {
 html = requests.get(url, headers=headers).text
 soup = BeautifulSoup(html, "html.parser")
 
-# The CBBC table is the SECOND table on the page
+# The CBBC table is the second table on the page
 tables = soup.find_all("table")
-table = tables[1]  # index 1 = second table
+table = tables[1]
 
 rows = []
 
 for tr in table.find_all("tr"):
     cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
-    if len(cols) == 2:  # only keep rows with 2 columns
+    if len(cols) == 2:
         rows.append(cols)
 
-# Extract previous close from the page
-last_close = soup.find("span", {"id": "lastClose"}).get_text(strip=True)
-rows.append(["上日收市價", last_close])
+# The last row already contains 上日收市價
+# No need to extract lastClose separately
 
 today = datetime.now().strftime("%Y-%m-%d")
 with open(f"data/{today}.json", "w", encoding="utf-8") as f:
