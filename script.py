@@ -1,24 +1,31 @@
 import requests
+from bs4 import BeautifulSoup
 import json
 from datetime import datetime
 
-url = "https://www.jpmhkwarrants.com/zh_hk/cbbc/cbbc-outstanding/HSI?format=json"
+url = "https://www.jpmhkwarrants.com/zh_hk/cbbc/cbbc-outstanding/HSI"
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36"
 }
 
-response = requests.get(url, headers=headers)
-data = response.json()
+html = requests.get(url, headers=headers).text
+soup = BeautifulSoup(html, "html.parser")
+
+# The CBBC table is the SECOND table on the page
+tables = soup.find_all("table")
+table = tables[1]  # index 1 = second table
 
 rows = []
 
-# Extract CBBC rows
-for item in data["data"]:
-    rows.append([item["range"], item["outstanding"]])
+for tr in table.find_all("tr"):
+    cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
+    if len(cols) == 2:  # only keep rows with 2 columns
+        rows.append(cols)
 
-# Add previous close
-rows.append(["上日收市價", data["last_close"]])
+# Extract previous close from the page
+last_close = soup.find("span", {"id": "lastClose"}).get_text(strip=True)
+rows.append(["上日收市價", last_close])
 
 today = datetime.now().strftime("%Y-%m-%d")
 with open(f"data/{today}.json", "w", encoding="utf-8") as f:
