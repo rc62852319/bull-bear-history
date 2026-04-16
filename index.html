@@ -1,38 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>HSI Bull Bear History</title>
+  <meta charset="utf-8" />
+  <title>CBBC History</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 40px;
+      background: #0f172a;
+      color: white;
+    }
+    canvas {
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+    }
+  </style>
 </head>
 
 <body>
-  <h2>HSI Bull / Bear History</h2>
+  <h1>HSI CBBC Outstanding History</h1>
 
-  <canvas id="chart" width="800" height="400"></canvas>
+  <canvas id="chart"></canvas>
 
   <script>
-    // temporary sample data (we will replace with real data later)
-    const data = [
-      {date:"2026-04-15", bull:120, bear:140},
-      {date:"2026-04-16", bull:150, bear:110},
-      {date:"2026-04-17", bull:180, bear:160}
-    ];
+    async function load() {
+      const res = await fetch('./data/history.json');
+      const data = await res.json();
 
-    const labels = data.map(x => x.date);
-    const bull = data.map(x => x.bull);
-    const bear = data.map(x => x.bear);
+      const labels = data.map(x => x.date);
+      const values = data.map(x => x.value);
 
-    new Chart(document.getElementById("chart"), {
-      type: "line",
-      data: {
-        labels: labels,
-        datasets: [
-          { label: "Bull", data: bull },
-          { label: "Bear", data: bear }
-        ]
-      }
-    });
+      new Chart(document.getElementById('chart'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Outstanding',
+            data: values,
+            borderColor: 'blue'
+          }]
+        }
+      });
+    }
+
+    load();
   </script>
-
 </body>
 </html>
