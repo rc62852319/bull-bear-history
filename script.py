@@ -49,4 +49,5 @@ today = "2026-04-17"   # ← Force new file for testing
 # today = hk_time.strftime("%Y-%m-%d")
 
 # Save JSON file
-with open(f"data/{today}.json
+with open(f"data/{today}.json", "w", encoding="utf-8") as f:
+    json.dump(rows, f, ensure_ascii=False, indent=2)
