@@ -26,6 +26,16 @@ jobs:
         run: |
           python script.py
 
+      - name: Generate files.json
+        run: |
+          echo "[" > data/files.json
+          for f in data/*.json; do
+            fname=$(basename "$f")
+            echo "\"$fname\"," >> data/files.json
+          done
+          sed -i '$ s/,$//' data/files.json
+          echo "]" >> data/files.json
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
