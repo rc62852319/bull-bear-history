@@ -13,24 +13,16 @@ data = response.json()
 
 rows = []
 
-# mainData holds the CBBC bands
-main_data = data.get("mainData", [])
-
-for item in main_data:
-    # Try a few likely key names to be robust
-    price_range = item.get("band") or item.get("range") or item.get("price") or ""
-    bull = item.get("bull") or item.get("bullvalue") or item.get("bull_oi") or ""
-    bear = item.get("bear") or item.get("bearvalue") or item.get("bear_oi") or ""
+# Extract CBBC rows from mainData
+for item in data.get("mainData", []):
+    price_range = item.get("price", "")
+    bull = item.get("bullvalue", "")
+    bear = item.get("bearvalue", "")
     rows.append([price_range, bull, bear])
 
-# furtherData may contain previous close
-further = data.get("furtherData", {}) or {}
-last_close = (
-    further.get("pclose")
-    or further.get("lastclose")
-    or further.get("last_close")
-    or "N/A"
-)
+# Extract previous close
+further = data.get("furtherData", {})
+last_close = further.get("pclose") or further.get("lastclose") or "N/A"
 
 rows.append(["上日收市價", last_close, ""])
 
