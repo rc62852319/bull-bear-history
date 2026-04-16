@@ -2,7 +2,7 @@ import requests
 import json
 from datetime import datetime, timedelta
 
-url = "https://www.warrants.hsbc.com.hk/tc/data/chart/cbbcBandChart?pricedetails=1&ucode=HSI&step=10&spread=100&sdate="
+url = "https://www.warrants.hsbc.com.hk/tc/cbbc/cbbcBandChart?pricedetails=1&ucode=HSI&step=10&spread=100"
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36"
