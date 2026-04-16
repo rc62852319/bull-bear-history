@@ -1,31 +1,36 @@
 import requests
+from bs4 import BeautifulSoup
 import json
 from datetime import datetime, timedelta
 
-url = "https://www.jpmhkwarrants.com/zh_hk/cbbc/cbbc-outstanding/HSI?format=json"
+url = "https://www.warrants.hsbc.com.hk/tc/cbbc/cbbc-map/type/outstanding"
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36",
-    "Accept": "application/json, text/javascript, */*; q=0.01",
-    "Referer": "https://www.jpmhkwarrants.com/zh_hk/cbbc/cbbc-outstanding/HSI",
-    "X-Requested-With": "XMLHttpRequest"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36"
 }
 
-response = requests.get(url, headers=headers)
-data = response.json()
+html = requests.get(url, headers=headers).text
+soup = BeautifulSoup(html, "html.parser")
 
 rows = []
 
-# Extract CBBC rows
-for item in data["data"]:
-    rows.append([item["range"], item["outstanding"]])
+# Find the CBBC outstanding table
+table = soup.find("table")
 
-# Add previous close
-rows.append(["上日收市價", data["last_close"]])
+# Extract table rows
+for tr in table.find_all("tr"):
+    cols = [td.get_text(strip=True) for td in tr.find_all("td")]
+    if len(cols) == 3:
+        price_range = cols[0]
+        bull = cols[1]
+        bear = cols[2]
+        rows.append([price_range, bull, bear])
 
-# Use Hong Kong date
-hk_time = datetime.utcnow() + timedelta(hours=8)
-today = hk_time.strftime("%Y-%m-%d")
+# Extract previous close (上日收市價)
+last_close_el = soup.find("span", {"class": "last-close"})
+if last_close_el:
+    last_close = last_close_el.get_text(strip=True)
+    rows.append(["上日收市價", last_close, ""])
+else:
+    rows.append(["上日收市價", "N/A", ""])
 
-with open(f"data/{today}.json", "w", encoding="utf-8") as f:
-    json.dump(rows, f, ensure_ascii=False, indent=2)
