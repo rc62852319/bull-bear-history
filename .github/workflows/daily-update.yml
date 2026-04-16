@@ -19,7 +19,7 @@ jobs:
           node-version: 20
 
       - name: Run scraper
-        run: node scrape.js
+       run: python script.py
 
       - name: Commit changes
         run: |
