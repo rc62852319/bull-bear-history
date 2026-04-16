@@ -1,32 +1,31 @@
 import requests
-from bs4 import BeautifulSoup
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
-url = "https://www.jpmhkwarrants.com/zh_hk/cbbc/cbbc-outstanding/HSI"
+url = "https://www.jpmhkwarrants.com/zh_hk/cbbc/cbbc-outstanding/HSI?format=json"
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Safari/537.36",
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Referer": "https://www.jpmhkwarrants.com/zh_hk/cbbc/cbbc-outstanding/HSI",
+    "X-Requested-With": "XMLHttpRequest"
 }
 
-html = requests.get(url, headers=headers).text
-print(html)
-soup = BeautifulSoup(html, "html.parser")
-
-# The CBBC table is the second table on the page
-tables = soup.find_all("table")
-table = tables[1]
+response = requests.get(url, headers=headers)
+data = response.json()
 
 rows = []
 
-for tr in table.find_all("tr"):
-    cols = [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
-    if len(cols) == 2:
-        rows.append(cols)
+# Extract CBBC rows
+for item in data["data"]:
+    rows.append([item["range"], item["outstanding"]])
 
-# The last row already contains 上日收市價
-# No need to extract lastClose separately
+# Add previous close
+rows.append(["上日收市價", data["last_close"]])
 
-today = datetime.now().strftime("%Y-%m-%d")
+# Use Hong Kong date
+hk_time = datetime.utcnow() + timedelta(hours=8)
+today = hk_time.strftime("%Y-%m-%d")
+
 with open(f"data/{today}.json", "w", encoding="utf-8") as f:
     json.dump(rows, f, ensure_ascii=False, indent=2)
