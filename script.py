@@ -11,6 +11,7 @@ headers = {
 
 # Fetch HTML
 html = requests.get(url, headers=headers).text
+print(html[:2000])  # ← ADD THIS
 soup = BeautifulSoup(html, "html.parser")
 
 rows = []
