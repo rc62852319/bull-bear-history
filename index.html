@@ -1,11 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Bull Bear History</title>
+  <title>HSI Bull Bear History</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
-  <h1>✅ Bull Bear History Page Working</h1>
-  <p>If you can see this, GitHub Pages is working correctly.</p>
+  <h2>HSI Bull / Bear History</h2>
+
+  <canvas id="chart" width="800" height="400"></canvas>
+
+  <script>
+    // temporary sample data (we will replace with real data later)
+    const data = [
+      {date:"2026-04-15", bull:120, bear:140},
+      {date:"2026-04-16", bull:150, bear:110},
+      {date:"2026-04-17", bull:180, bear:160}
+    ];
+
+    const labels = data.map(x => x.date);
+    const bull = data.map(x => x.bull);
+    const bear = data.map(x => x.bear);
+
+    new Chart(document.getElementById("chart"), {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          { label: "Bull", data: bull },
+          { label: "Bear", data: bear }
+        ]
+      }
+    });
+  </script>
+
 </body>
 </html>
