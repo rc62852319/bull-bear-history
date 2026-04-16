@@ -11,21 +11,23 @@ headers = {
 response = requests.get(url, headers=headers)
 data = response.json()
 
-# ⭐ DEBUG: Print the JSON so we can see the real field names
-print(json.dumps(data, ensure_ascii=False, indent=2))
-
 rows = []
 
-# TEMP extraction (will fix once we see JSON structure)
+# Extract CBBC outstanding rows
 for item in data.get("mainData", []):
-    price_range = item.get("price", "")
+    price_range = item.get("range", "")
     bull = item.get("bullvalue", "")
     bear = item.get("bearvalue", "")
     rows.append([price_range, bull, bear])
 
-# previous close
+# Extract previous close
 further = data.get("furtherData", {})
-last_close = further.get("pclose") or further.get("lastclose") or "N/A"
+last_close = (
+    further.get("pclose")
+    or further.get("lastclose")
+    or further.get("last")
+    or "N/A"
+)
 
 rows.append(["上日收市價", last_close, ""])
 
