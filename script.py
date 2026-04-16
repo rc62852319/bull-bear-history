@@ -10,6 +10,7 @@ headers = {
 }
 
 html = requests.get(url, headers=headers).text
+print(html)
 soup = BeautifulSoup(html, "html.parser")
 
 # The CBBC table is the second table on the page
