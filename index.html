@@ -137,7 +137,7 @@ ${heavy}
             }
         },
 
-        legend: { data: ["Bull", "Bear"], top: 30 },
+        legend: { data: ["Bear", "Bull"], top: 30 },
 
         yAxis: {
             type: "category",
@@ -151,18 +151,30 @@ ${heavy}
 
         series: [
             {
-                name: "Bull",
-                type: "bar",
-                stack: "total",
-                data: bull,
-                itemStyle: { color: "#ff66b3" }
-            },
-            {
                 name: "Bear",
                 type: "bar",
                 stack: "total",
                 data: bear,
-                itemStyle: { color: "#6666ff" }
+                itemStyle: { color: "#cc0000" }, // red
+                label: {
+                    show: true,
+                    position: "right",
+                    color: "#cc0000",
+                    fontWeight: "bold"
+                }
+            },
+            {
+                name: "Bull",
+                type: "bar",
+                stack: "total",
+                data: bull,
+                itemStyle: { color: "#006400" }, // dark green
+                label: {
+                    show: true,
+                    position: "right",
+                    color: "#006400",
+                    fontWeight: "bold"
+                }
             }
         ]
     });
