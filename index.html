@@ -136,8 +136,17 @@ Total: ${bull[i] + bear[i]}
             data: price,
             inverse: true
         },
-        xAxis: { type: "value", name: "Volume" },
 
+        /* ⭐ COMPRESSED BAR SCALE */
+        xAxis: {
+            type: "log",
+            name: "Volume",
+            logBase: 10,
+            minorTick: { show: false },
+            minorSplitLine: { show: false }
+        },
+
+        /* ⭐ FLOATING 前收市價 LABEL */
         graphic: prevIndex >= 0 ? [{
             type: "text",
             left: "center",
@@ -157,13 +166,7 @@ Total: ${bull[i] + bear[i]}
                 stack: "total",
                 data: bear,
                 itemStyle: { color: "#cc0000" },
-                label: {
-                    show: true,
-                    position: "right",
-                    formatter: p => p.value > 0 ? p.value : "",
-                    color: "#cc0000",
-                    fontWeight: "bold"
-                }
+                label: { show: false }  /* ❌ NO VALUE LABELS */
             },
             {
                 name: "Bull",
@@ -171,13 +174,7 @@ Total: ${bull[i] + bear[i]}
                 stack: "total",
                 data: bull,
                 itemStyle: { color: "#006400" },
-                label: {
-                    show: true,
-                    position: "right",
-                    formatter: p => p.value > 0 ? p.value : "",
-                    color: "#006400",
-                    fontWeight: "bold"
-                }
+                label: { show: false }  /* ❌ NO VALUE LABELS */
             }
         ]
     });
