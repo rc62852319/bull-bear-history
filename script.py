@@ -1,6 +1,14 @@
 import requests
+import json
+from datetime import datetime, timedelta
 
-url = "https://www.warrants.hsbc.com.hk/tc/data/chart/cbbcBandChart?pricedetails=1&ucode=HSI&step=10&spread=100&sdate=&_=1776428303601"
+# --- 1. Get Hong Kong date ---
+# HK = UTC+8
+hk_time = datetime.utcnow() + timedelta(hours=8)
+date_str = hk_time.strftime("%Y-%m-%d")
+
+# --- 2. HSBC JSON endpoint (your confirmed working URL) ---
+hsbc_url = "https://www.warrants.hsbc.com.hk/tc/data/chart/cbbcBandChart?pricedetails=1&ucode=HSI&step=10&spread=100&sdate=&_=1776428303601"
 
 headers = {
     "Accept": "application/json, text/javascript, */*; q=0.01",
@@ -18,6 +26,22 @@ headers = {
     "X-Requested-With": "XMLHttpRequest"
 }
 
-response = requests.get(url, headers=headers)
+# --- 3. Fetch JSON from HSBC ---
+response = requests.get(hsbc_url, headers=headers)
+json_data = response.text
 
-print(response.text)
+# --- 4. Save daily file ---
+daily_path = f"data/cbbc/{date_str}.json"
+with open(daily_path, "w", encoding="utf-8") as f:
+    f.write(json_data)
+
+# --- 5. Update latest.json ---
+latest_path = "data/cbbc/latest.json"
+with open(latest_path, "w", encoding="utf-8") as f:
+    f.write(json_data)
+
+# --- 6. Upload JSON to your Worker (same format as your old script) ---
+worker_url = "https://hsbc-proxy.rc62852319.workers.dev/"
+requests.post(worker_url, data=json_data)
+
+print(f"CBBC data updated for {date_str} and uploaded successfully.")
