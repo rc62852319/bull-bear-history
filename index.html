@@ -63,7 +63,7 @@ function splitDate(name) {
     return { y, m, d };
 }
 
-// ⭐ MERGE bull + bear into one row per price band
+// Merge bull + bear per price band, then sort by price (high -> low)
 function extractData(json) {
     const map = {};
 
@@ -74,7 +74,7 @@ function extractData(json) {
         const value = Math.round(Number(row.d1) || 0);
 
         if (!map[label]) {
-            map[label] = { bull: 0, bear: 0 };
+            map[label] = { bull: 0, bear: 0, from: Number(row.fr) };
         }
 
         if (row.ty === "bull") {
@@ -84,9 +84,13 @@ function extractData(json) {
         }
     });
 
-    const price = Object.keys(map);
-    const bull = price.map(p => map[p].bull);
-    const bear = price.map(p => map[p].bear);
+    const labels = Object.keys(map).sort((a, b) => {
+        return map[b].from - map[a].from; // high price on top
+    });
+
+    const price = labels;
+    const bull = labels.map(l => map[l].bull);
+    const bear = labels.map(l => map[l].bear);
 
     return { price, bull, bear };
 }
@@ -94,10 +98,8 @@ function extractData(json) {
 function drawChart(price, bull, bear, date, json) {
     const chart = echarts.init(document.getElementById("chart"));
 
-    // ⭐ 前收市價 (previous close)
     const prevClose = Math.round(Number(json.furtherData.hsilast));
 
-    // Find which price band contains 前收市價
     let prevIndex = -1;
     price.forEach((label, i) => {
         const [from, to] = label.split(" - ").map(Number);
@@ -105,6 +107,10 @@ function drawChart(price, bull, bear, date, json) {
             prevIndex = i;
         }
     });
+
+    const prevPos = prevIndex >= 0
+        ? ((prevIndex + 0.5) / price.length) * 100
+        : 50;
 
     chart.setOption({
         title: { text: date, left: "center" },
@@ -131,6 +137,18 @@ Total: ${bull[i] + bear[i]}
             inverse: true
         },
         xAxis: { type: "value", name: "Volume" },
+
+        graphic: prevIndex >= 0 ? [{
+            type: "text",
+            left: "center",
+            top: prevPos + "%",
+            style: {
+                text: `前收市價: ${prevClose}`,
+                fill: "#000",
+                font: "bold 16px Arial",
+                textAlign: "center"
+            }
+        }] : [],
 
         series: [
             {
@@ -160,23 +178,6 @@ Total: ${bull[i] + bear[i]}
                     color: "#006400",
                     fontWeight: "bold"
                 }
-            },
-
-            /* ⭐ ONLY TEXT — NO LINE */
-            {
-                type: "scatter",
-                data: [0],
-                label: {
-                    show: true,
-                    formatter: `前收市價: ${prevClose}`,
-                    color: "#000",
-                    fontWeight: "bold",
-                    fontSize: 16,
-                    position: "right"
-                },
-                symbolSize: 0,
-                tooltip: { show: false },
-                encode: { y: prevIndex }
             }
         ]
     });
