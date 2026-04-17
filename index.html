@@ -39,12 +39,12 @@
 
 <h1>Bull / Bear History</h1>
 
-<!-- This is the missing part -->
+<!-- Dropdown container -->
 <div id="controls"></div>
 
+<!-- Chart container -->
 <div id="chart"></div>
 
-<!-- Your script starts here -->
 <script>
 async function loadJSON(url) {
     const res = await fetch(url);
@@ -112,13 +112,12 @@ function drawChart(price, bull, bear, date, json) {
         return "";
     });
 
-    const sumBull = json.furtherData.sumBull.map(Number);
-    const sumBear = json.furtherData.sumBear.map(Number);
-
     chart.setOption({
         title: { text: `Bull / Bear Distribution — ${date}`, left: "center" },
+
         tooltip: {
             trigger: "axis",
+            axisPointer: { type: "shadow" },
             formatter: function (params) {
                 const i = params[0].dataIndex;
                 const label = price[i];
@@ -137,17 +136,34 @@ ${heavy}
                 `;
             }
         },
-        legend: { data: ["Bull", "Bear", "Bull Trend", "Bear Trend"], top: 30 },
-        xAxis: { type: "category", data: price },
-        yAxis: [
-            { type: "value", name: "Volume" },
-            { type: "value", name: "Trend", position: "right" }
-        ],
+
+        legend: { data: ["Bull", "Bear"], top: 30 },
+
+        yAxis: {
+            type: "category",
+            data: price,
+            inverse: true
+        },
+        xAxis: {
+            type: "value",
+            name: "Volume"
+        },
+
         series: [
-            { name: "Bull", type: "bar", data: bull, itemStyle: { color: "#ff66b3" } },
-            { name: "Bear", type: "bar", data: bear, itemStyle: { color: "#6666ff" } },
-            { name: "Bull Trend", type: "line", yAxisIndex: 1, smooth: true, data: sumBull, itemStyle: { color: "#cc0066" } },
-            { name: "Bear Trend", type: "line", yAxisIndex: 1, smooth: true, data: sumBear, itemStyle: { color: "#0033cc" } }
+            {
+                name: "Bull",
+                type: "bar",
+                stack: "total",
+                data: bull,
+                itemStyle: { color: "#ff66b3" }
+            },
+            {
+                name: "Bear",
+                type: "bar",
+                stack: "total",
+                data: bear,
+                itemStyle: { color: "#6666ff" }
+            }
         ]
     });
 }
@@ -155,7 +171,6 @@ ${heavy}
 async function init() {
     const files = await loadAllFiles();
 
-    // Build dropdowns
     const years = new Set();
     const months = {};
     const days = {};
@@ -173,7 +188,6 @@ async function init() {
         days[y][m].add(d);
     });
 
-    // Create dropdowns
     const controls = document.getElementById("controls");
     controls.innerHTML = `
         <label>Year:</label>
@@ -188,7 +202,6 @@ async function init() {
     const monthSel = document.getElementById("monthSel");
     const daySel = document.getElementById("daySel");
 
-    // Populate year dropdown
     [...years].sort().reverse().forEach(y => {
         yearSel.innerHTML += `<option value="${y}">${y}</option>`;
     });
@@ -230,7 +243,6 @@ async function init() {
     monthSel.addEventListener("change", updateDays);
     daySel.addEventListener("change", loadSelected);
 
-    // Initialize
     updateMonths();
 }
 init();
