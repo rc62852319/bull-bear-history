@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>牛熊歷史參考</title>
 
-<!-- ECharts -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 
 <style>
@@ -64,11 +63,9 @@ function splitDate(name) {
     return { y, m, d };
 }
 
-// ❗ NO SORTING — keep original order
+// ⭐ FIXED: MERGE bull + bear into one row per price band
 function extractData(json) {
-    const price = [];
-    const bull = [];
-    const bear = [];
+    const map = {};
 
     json.mainData.forEach(row => {
         if (!row.fr || !row.to) return;
@@ -76,37 +73,26 @@ function extractData(json) {
         const label = `${row.fr} - ${row.to}`;
         const value = Math.round(Number(row.d1) || 0);
 
+        if (!map[label]) {
+            map[label] = { bull: 0, bear: 0 };
+        }
+
         if (row.ty === "bull") {
-            price.push(label);
-            bull.push(value);
-            bear.push(0);
+            map[label].bull = value;
         } else if (row.ty === "bear") {
-            price.push(label);
-            bull.push(0);
-            bear.push(value);
+            map[label].bear = value;
         }
     });
+
+    const price = Object.keys(map);
+    const bull = price.map(p => map[p].bull);
+    const bear = price.map(p => map[p].bear);
 
     return { price, bull, bear };
 }
 
-function computeHeavyZones(values) {
-    const sorted = [...values].sort((a, b) => b - a);
-    return sorted[Math.floor(values.length * 0.1)] || 0;
-}
-
 function drawChart(price, bull, bear, date, json) {
     const chart = echarts.init(document.getElementById("chart"));
-
-    const lastPrice = Math.round(Number(json.furtherData.hsilast));
-    const bullHeavy = computeHeavyZones(bull);
-    const bearHeavy = computeHeavyZones(bear);
-
-    const heavyZones = price.map((label, i) => {
-        if (bull[i] >= bullHeavy) return "bull";
-        if (bear[i] >= bearHeavy) return "bear";
-        return "";
-    });
 
     chart.setOption({
         title: { text: date, left: "center" },
@@ -114,21 +100,13 @@ function drawChart(price, bull, bear, date, json) {
         tooltip: {
             trigger: "axis",
             axisPointer: { type: "shadow" },
-            formatter: function (params) {
+            formatter: params => {
                 const i = params[0].dataIndex;
-                const label = price[i];
-                const b = Math.round(bull[i]);
-                const r = Math.round(bear[i]);
-                const total = Math.round(b + r);
-                const heavy = heavyZones[i] ? `Heavy Zone (${heavyZones[i]})` : "";
-                const last = label.includes(lastPrice.toFixed(0)) ? "← Last Price" : "";
-
                 return `
-<b>${label}</b> ${last}<br>
-Bull: ${b}<br>
-Bear: ${r}<br>
-Total: ${total}<br>
-${heavy}
+<b>${price[i]}</b><br>
+Bull: ${bull[i]}<br>
+Bear: ${bear[i]}<br>
+Total: ${bull[i] + bear[i]}
                 `;
             }
         },
@@ -140,10 +118,7 @@ ${heavy}
             data: price,
             inverse: true
         },
-        xAxis: {
-            type: "value",
-            name: "Volume"
-        },
+        xAxis: { type: "value", name: "Volume" },
 
         series: [
             {
