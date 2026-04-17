@@ -1,47 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bull / Bear History</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bull / Bear History</title>
 
-  <!-- ECharts -->
-  <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 
-  <style>
+<style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #fafafa;
+        font-family: Arial, sans-serif;
+        background: #ffe6f2;
+        margin: 0;
+        padding: 0;
+        text-align: center;
     }
     h1 {
-      text-align: center;
-      margin-bottom: 30px;
+        margin-top: 20px;
+        color: #cc0066;
     }
     #chart {
-      width: 100%;
-      height: 500px;
-      margin-top: 30px;
+        width: 95%;
+        height: 600px;
+        margin: 20px auto;
+        background: white;
+        border-radius: 10px;
+        padding: 10px;
     }
-    #status {
-      text-align: center;
-      margin-top: 20px;
-      color: #666;
+    #dateSelector {
+        margin: 20px;
+        padding: 10px;
+        font-size: 16px;
     }
-  </style>
+</style>
 </head>
 
 <body>
-  <h1>HSI Bull / Bear History</h1>
+<h1>Bull / Bear History</h1>
 
-  <div id="chart"></div>
-  <div id="status">Loading data…</div>
+<select id="dateSelector"></select>
 
-  <script>
-    async function loadAllJsonFiles() {
-      // Fetch directory listing
-      const res = await fetch("data/");
-      const text = await res.text();
+<div id="chart"></div>
 
-      // Extract all .json filenames
-      const files = [...text.matchAll(/href
+<script>
+async function loadJSON(url) {
+    const res = await fetch(url);
+    return res.json();
+}
+
+async function loadAllFiles() {
+    const apiUrl = "https://api.github.com/repos/rc62852319/bull-bear-history/contents/data/cbbc";
+    const list = await loadJSON(apiUrl);
+
+    const files = list
+        .filter(f => f.name.endsWith(".json"))
+        .map(f => f.name)
+        .sort()
+        .reverse();
+
+    return files;
+}
+
+function extractData(json) {
+    const price = [];
+    const bull = [];
+    const bear = [];
+
+    json.mainData.forEach(row => {
+        if (!row.fr || !row.to) return;
+
+        const label = `${row.fr} - ${row.to}`;
+        const value = Number(row.d1) || 0;
+
+        if (row.ty === "bull") {
+            price.push(label);
+            bull.push(value);
+            bear.push(0);
+        } else if (row.ty === "bear") {
+            price.push(label);
+            bull.push(0);
+            bear.push(value);
+        }
+    });
+
+    return { price, bull, bear };
+}
+
+function drawChart(price, bull, bear, date) {
+    const chart = echarts.init(document.getElementById("chart"));
+
+    const option = {
+        title: {
