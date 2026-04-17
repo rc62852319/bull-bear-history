@@ -166,7 +166,13 @@ Total: ${bull[i] + bear[i]}
                 stack: "total",
                 data: bear,
                 itemStyle: { color: "#cc0000" },
-                label: { show: false }  /* ❌ NO VALUE LABELS */
+                label: {
+                    show: true,
+                    position: "right",
+                    formatter: p => p.value > 0 ? p.value : "",
+                    color: "#cc0000",
+                    fontWeight: "bold"
+                }
             },
             {
                 name: "Bull",
@@ -174,7 +180,13 @@ Total: ${bull[i] + bear[i]}
                 stack: "total",
                 data: bull,
                 itemStyle: { color: "#006400" },
-                label: { show: false }  /* ❌ NO VALUE LABELS */
+                label: {
+                    show: true,
+                    position: "right",
+                    formatter: p => p.value > 0 ? p.value : "",
+                    color: "#006400",
+                    fontWeight: "bold"
+                }
             }
         ]
     });
