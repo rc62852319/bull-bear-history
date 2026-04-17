@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bull / Bear History</title>
+<title>牛熊歷史參考</title>
 
 <!-- ECharts -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
@@ -37,12 +37,9 @@
 
 <body>
 
-<h1>Bull / Bear History</h1>
+<h1>牛熊歷史參考</h1>
 
-<!-- Dropdown container -->
 <div id="controls"></div>
-
-<!-- Chart container -->
 <div id="chart"></div>
 
 <script>
@@ -51,19 +48,17 @@ async function loadJSON(url) {
     return res.json();
 }
 
-// Load all JSON filenames from GitHub
 async function loadAllFiles() {
     const apiUrl = "https://api.github.com/repos/rc62852319/bull-bear-history/contents/data/cbbc";
     const list = await loadJSON(apiUrl);
 
     return list
         .filter(f => f.name.endsWith(".json"))
-        .map(f => f.name.replace(".json", "")) // remove .json
+        .map(f => f.name.replace(".json", ""))
         .sort()
         .reverse();
 }
 
-// Extract year, month, day from "YYYY-MM-DD"
 function splitDate(name) {
     const [y, m, d] = name.split("-");
     return { y, m, d };
@@ -78,7 +73,7 @@ function extractData(json) {
         if (!row.fr || !row.to) return;
 
         const label = `${row.fr} - ${row.to}`;
-        const value = Number(row.d1) || 0;
+        const value = Math.round(Number(row.d1) || 0); // round to whole number
 
         if (row.ty === "bull") {
             price.push(label);
@@ -102,7 +97,7 @@ function computeHeavyZones(values) {
 function drawChart(price, bull, bear, date, json) {
     const chart = echarts.init(document.getElementById("chart"));
 
-    const lastPrice = Number(json.furtherData.hsilast);
+    const lastPrice = Math.round(Number(json.furtherData.hsilast));
     const bullHeavy = computeHeavyZones(bull);
     const bearHeavy = computeHeavyZones(bear);
 
@@ -113,7 +108,7 @@ function drawChart(price, bull, bear, date, json) {
     });
 
     chart.setOption({
-        title: { text: `Bull / Bear Distribution — ${date}`, left: "center" },
+        title: { text: date, left: "center" },  // ONLY show date
 
         tooltip: {
             trigger: "axis",
@@ -121,9 +116,9 @@ function drawChart(price, bull, bear, date, json) {
             formatter: function (params) {
                 const i = params[0].dataIndex;
                 const label = price[i];
-                const b = bull[i];
-                const r = bear[i];
-                const total = b + r;
+                const b = Math.round(bull[i]);
+                const r = Math.round(bear[i]);
+                const total = Math.round(b + r);
                 const heavy = heavyZones[i] ? `Heavy Zone (${heavyZones[i]})` : "";
                 const last = label.includes(lastPrice.toFixed(0)) ? "← Last Price" : "";
 
@@ -155,7 +150,7 @@ ${heavy}
                 type: "bar",
                 stack: "total",
                 data: bear,
-                itemStyle: { color: "#cc0000" }, // red
+                itemStyle: { color: "#cc0000" },
                 label: {
                     show: true,
                     position: "right",
@@ -168,7 +163,7 @@ ${heavy}
                 type: "bar",
                 stack: "total",
                 data: bull,
-                itemStyle: { color: "#006400" }, // dark green
+                itemStyle: { color: "#006400" },
                 label: {
                     show: true,
                     position: "right",
