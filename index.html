@@ -64,9 +64,11 @@ function splitDate(name) {
     return { y, m, d };
 }
 
-// ✅ Combine bull + bear per price band and sort by total DESC
+// ❗ NO SORTING — keep original order
 function extractData(json) {
-    const map = {};
+    const price = [];
+    const bull = [];
+    const bear = [];
 
     json.mainData.forEach(row => {
         if (!row.fr || !row.to) return;
@@ -74,30 +76,16 @@ function extractData(json) {
         const label = `${row.fr} - ${row.to}`;
         const value = Math.round(Number(row.d1) || 0);
 
-        if (!map[label]) {
-            map[label] = { label, bull: 0, bear: 0 };
-        }
-
         if (row.ty === "bull") {
-            map[label].bull += value;
+            price.push(label);
+            bull.push(value);
+            bear.push(0);
         } else if (row.ty === "bear") {
-            map[label].bear += value;
+            price.push(label);
+            bull.push(0);
+            bear.push(value);
         }
     });
-
-    const rows = Object.values(map).map(r => ({
-        label: r.label,
-        bull: r.bull,
-        bear: r.bear,
-        total: r.bull + r.bear
-    }));
-
-    // Sort by total descending (highest at top)
-    rows.sort((a, b) => b.total - a.total);
-
-    const price = rows.map(r => r.label);
-    const bull = rows.map(r => r.bull);
-    const bear = rows.map(r => r.bear);
 
     return { price, bull, bear };
 }
@@ -167,9 +155,7 @@ ${heavy}
                 label: {
                     show: true,
                     position: "right",
-                    formatter: function (p) {
-                        return p.value > 0 ? p.value : "";
-                    },
+                    formatter: p => p.value > 0 ? p.value : "",
                     color: "#cc0000",
                     fontWeight: "bold"
                 }
@@ -183,9 +169,7 @@ ${heavy}
                 label: {
                     show: true,
                     position: "right",
-                    formatter: function (p) {
-                        return p.value > 0 ? p.value : "";
-                    },
+                    formatter: p => p.value > 0 ? p.value : "",
                     color: "#006400",
                     fontWeight: "bold"
                 }
