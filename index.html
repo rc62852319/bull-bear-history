@@ -22,7 +22,7 @@
     }
     #chart {
         width: 95%;
-        height: 600px;
+        height: 650px;
         margin: 20px auto;
         background: white;
         border-radius: 10px;
@@ -87,8 +87,141 @@ function extractData(json) {
     return { price, bull, bear };
 }
 
-function drawChart(price, bull, bear, date) {
+function computeHeavyZones(values) {
+    const sorted = [...values].sort((a, b) => b - a);
+    const threshold = sorted[Math.floor(values.length * 0.1)] || 0;
+    return threshold;
+}
+
+function drawChart(price, bull, bear, date, json) {
     const chart = echarts.init(document.getElementById("chart"));
+
+    const lastPrice = Number(json.furtherData.hsilast);
+
+    const bullHeavy = computeHeavyZones(bull);
+    const bearHeavy = computeHeavyZones(bear);
+
+    const heavyZones = price.map((label, i) => {
+        if (bull[i] >= bullHeavy) return "bull";
+        if (bear[i] >= bearHeavy) return "bear";
+        return "";
+    });
+
+    const sumBull = json.furtherData.sumBull.map(Number);
+    const sumBear = json.furtherData.sumBear.map(Number);
 
     const option = {
         title: {
+            text: `Bull / Bear Distribution — ${date}`,
+            left: "center"
+        },
+        tooltip: {
+            trigger: "axis",
+            formatter: function (params) {
+                const i = params[0].dataIndex;
+                const label = price[i];
+                const b = bull[i];
+                const r = bear[i];
+                const total = b + r;
+                const heavy = heavyZones[i] ? `Heavy Zone (${heavyZones[i]})` : "";
+                const last = label.includes(lastPrice.toFixed(0)) ? "← Last Price" : "";
+
+                return `
+<b>${label}</b> ${last}<br>
+Bull: ${b}<br>
+Bear: ${r}<br>
+Total: ${total}<br>
+${heavy}
+                `;
+            }
+        },
+        legend: {
+            data: ["Bull", "Bear", "Bull Trend", "Bear Trend"],
+            top: 30
+        },
+        xAxis: {
+            type: "category",
+            data: price
+        },
+        yAxis: [
+            { type: "value", name: "Volume" },
+            { type: "value", name: "Trend", position: "right" }
+        ],
+        series: [
+            {
+                name: "Bull",
+                type: "bar",
+                data: bull,
+                itemStyle: { color: "#ff66b3" }
+            },
+            {
+                name: "Bear",
+                type: "bar",
+                data: bear,
+                itemStyle: { color: "#6666ff" }
+            },
+            {
+                name: "Bull Trend",
+                type: "line",
+                yAxisIndex: 1,
+                smooth: true,
+                data: sumBull,
+                itemStyle: { color: "#cc0066" }
+            },
+            {
+                name: "Bear Trend",
+                type: "line",
+                yAxisIndex: 1,
+                smooth: true,
+                data: sumBear,
+                itemStyle: { color: "#0033cc" }
+            },
+            {
+                type: "markLine",
+                name: "Last Price",
+                symbol: "none",
+                lineStyle: { color: "red", width: 2, type: "solid" },
+                data: [
+                    {
+                        xAxis: price.findIndex(p => p.includes(lastPrice.toFixed(0))),
+                        label: { formatter: `Last Price: ${lastPrice}` }
+                    }
+                ]
+            }
+        ]
+    };
+
+    chart.setOption(option);
+}
+
+async function init() {
+    const files = await loadAllFiles();
+    const selector = document.getElementById("dateSelector");
+
+    files.forEach(f => {
+        const date = f.replace(".json", "");
+        const opt = document.createElement("option");
+        opt.value = f;
+        opt.textContent = date;
+        selector.appendChild(opt);
+    });
+
+    async function loadSelected() {
+        const file = selector.value;
+        const date = file.replace(".json", "");
+        const json = await loadJSON(`data/cbbc/${file}`);
+        const { price, bull, bear } = extractData(json);
+        drawChart(price, bull, bear, date, json);
+    }
+
+    selector.addEventListener("change", loadSelected);
+
+    selector.value = files[0];
+    loadSelected();
+}
+
+init();
+</script>
+
+</body>
+</html>
