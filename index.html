@@ -64,10 +64,9 @@ function splitDate(name) {
     return { y, m, d };
 }
 
+// ✅ Combine bull + bear per price band and sort by total DESC
 function extractData(json) {
-    const price = [];
-    const bull = [];
-    const bear = [];
+    const map = {};
 
     json.mainData.forEach(row => {
         if (!row.fr || !row.to) return;
@@ -75,16 +74,30 @@ function extractData(json) {
         const label = `${row.fr} - ${row.to}`;
         const value = Math.round(Number(row.d1) || 0);
 
+        if (!map[label]) {
+            map[label] = { label, bull: 0, bear: 0 };
+        }
+
         if (row.ty === "bull") {
-            price.push(label);
-            bull.push(value);
-            bear.push(0);
+            map[label].bull += value;
         } else if (row.ty === "bear") {
-            price.push(label);
-            bull.push(0);
-            bear.push(value);
+            map[label].bear += value;
         }
     });
+
+    const rows = Object.values(map).map(r => ({
+        label: r.label,
+        bull: r.bull,
+        bear: r.bear,
+        total: r.bull + r.bear
+    }));
+
+    // Sort by total descending (highest at top)
+    rows.sort((a, b) => b.total - a.total);
+
+    const price = rows.map(r => r.label);
+    const bull = rows.map(r => r.bull);
+    const bear = rows.map(r => r.bear);
 
     return { price, bull, bear };
 }
