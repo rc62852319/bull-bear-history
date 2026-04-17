@@ -73,7 +73,7 @@ function extractData(json) {
         if (!row.fr || !row.to) return;
 
         const label = `${row.fr} - ${row.to}`;
-        const value = Math.round(Number(row.d1) || 0); // round to whole number
+        const value = Math.round(Number(row.d1) || 0);
 
         if (row.ty === "bull") {
             price.push(label);
@@ -108,7 +108,7 @@ function drawChart(price, bull, bear, date, json) {
     });
 
     chart.setOption({
-        title: { text: date, left: "center" },  // ONLY show date
+        title: { text: date, left: "center" },
 
         tooltip: {
             trigger: "axis",
@@ -154,6 +154,9 @@ ${heavy}
                 label: {
                     show: true,
                     position: "right",
+                    formatter: function (p) {
+                        return p.value > 0 ? p.value : "";
+                    },
                     color: "#cc0000",
                     fontWeight: "bold"
                 }
@@ -167,6 +170,9 @@ ${heavy}
                 label: {
                     show: true,
                     position: "right",
+                    formatter: function (p) {
+                        return p.value > 0 ? p.value : "";
+                    },
                     color: "#006400",
                     fontWeight: "bold"
                 }
