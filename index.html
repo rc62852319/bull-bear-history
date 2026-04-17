@@ -17,7 +17,7 @@
     }
     h1 {
         margin-top: 20px;
-        color: #000000; /* BLACK TITLE */
+        color: #cc0066;
     }
     #controls {
         margin: 20px;
@@ -63,9 +63,11 @@ function splitDate(name) {
     return { y, m, d };
 }
 
-// Merge bull + bear per price band, then sort by price (high -> low)
+// ORIGINAL WORKING VERSION — NO SORTING, NO MERGING CHANGES
 function extractData(json) {
-    const map = {};
+    const price = [];
+    const bull = [];
+    const bear = [];
 
     json.mainData.forEach(row => {
         if (!row.fr || !row.to) return;
@@ -73,24 +75,16 @@ function extractData(json) {
         const label = `${row.fr} - ${row.to}`;
         const value = Math.round(Number(row.d1) || 0);
 
-        if (!map[label]) {
-            map[label] = { bull: 0, bear: 0, from: Number(row.fr) };
-        }
-
         if (row.ty === "bull") {
-            map[label].bull = value;
+            price.push(label);
+            bull.push(value);
+            bear.push(0);
         } else if (row.ty === "bear") {
-            map[label].bear = value;
+            price.push(label);
+            bull.push(0);
+            bear.push(value);
         }
     });
-
-    const labels = Object.keys(map).sort((a, b) => {
-        return map[b].from - map[a].from; // high price on top
-    });
-
-    const price = labels;
-    const bull = labels.map(l => map[l].bull);
-    const bear = labels.map(l => map[l].bear);
 
     return { price, bull, bear };
 }
@@ -98,33 +92,24 @@ function extractData(json) {
 function drawChart(price, bull, bear, date, json) {
     const chart = echarts.init(document.getElementById("chart"));
 
-    const prevClose = Math.round(Number(json.furtherData.hsilast));
-
-    let prevIndex = -1;
-    price.forEach((label, i) => {
-        const [from, to] = label.split(" - ").map(Number);
-        if (prevClose >= from && prevClose <= to) {
-            prevIndex = i;
-        }
-    });
-
-    const prevPos = prevIndex >= 0
-        ? ((prevIndex + 0.5) / price.length) * 100
-        : 50;
-
     chart.setOption({
         title: { text: date, left: "center" },
 
         tooltip: {
             trigger: "axis",
             axisPointer: { type: "shadow" },
-            formatter: params => {
+            formatter: function (params) {
                 const i = params[0].dataIndex;
+                const label = price[i];
+                const b = Math.round(bull[i]);
+                const r = Math.round(bear[i]);
+                const total = Math.round(b + r);
+
                 return `
-<b>${price[i]}</b><br>
-Bull: ${bull[i]}<br>
-Bear: ${bear[i]}<br>
-Total: ${bull[i] + bear[i]}
+<b>${label}</b><br>
+Bull: ${b}<br>
+Bear: ${r}<br>
+Total: ${total}
                 `;
             }
         },
@@ -136,19 +121,10 @@ Total: ${bull[i] + bear[i]}
             data: price,
             inverse: true
         },
-        xAxis: { type: "value", name: "Volume" },
-
-        graphic: prevIndex >= 0 ? [{
-            type: "text",
-            left: "center",
-            top: prevPos + "%",
-            style: {
-                text: `前收市價: ${prevClose}`,
-                fill: "#000",
-                font: "bold 16px Arial",
-                textAlign: "center"
-            }
-        }] : [],
+        xAxis: {
+            type: "value",
+            name: "Volume"
+        },
 
         series: [
             {
