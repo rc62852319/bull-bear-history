@@ -136,17 +136,8 @@ Total: ${bull[i] + bear[i]}
             data: price,
             inverse: true
         },
+        xAxis: { type: "value", name: "Volume" },
 
-        /* ⭐ COMPRESSED BAR SCALE */
-        xAxis: {
-            type: "log",
-            name: "Volume",
-            logBase: 10,
-            minorTick: { show: false },
-            minorSplitLine: { show: false }
-        },
-
-        /* ⭐ FLOATING 前收市價 LABEL */
         graphic: prevIndex >= 0 ? [{
             type: "text",
             left: "center",
