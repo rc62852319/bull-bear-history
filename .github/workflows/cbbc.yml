@@ -1,0 +1,35 @@
+name: Daily CBBC Update
+
+on:
+  schedule:
+    - cron: "0 22 * * 1-5"   # 06:00 HK, Monday–Friday
+  workflow_dispatch:         # allows manual run
+
+jobs:
+  update-cbbc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run CBBC script
+        run: python script.py
+
+      - name: Commit updated data
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add data/cbbc/*.json
+          git commit -m "Auto-update CBBC data" || echo "No changes to commit"
+
+      - name: Push changes
+        run: git push
