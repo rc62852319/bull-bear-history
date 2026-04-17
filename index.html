@@ -1,3 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bull / Bear History</title>
+
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #ffe6f2;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+    }
+    h1 {
+        margin-top: 20px;
+        color: #cc0066;
+    }
+    #controls {
+        margin: 20px;
+        font-size: 16px;
+    }
+    #chart {
+        width: 95%;
+        height: 650px;
+        margin: 20px auto;
+        background: white;
+        border-radius: 10px;
+        padding: 10px;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Bull / Bear History</h1>
+
+<!-- This is the missing part -->
+<div id="controls"></div>
+
+<div id="chart"></div>
+
+<!-- Your script starts here -->
 <script>
 async function loadJSON(url) {
     const res = await fetch(url);
@@ -188,3 +235,6 @@ async function init() {
 }
 init();
 </script>
+
+</body>
+</html>
