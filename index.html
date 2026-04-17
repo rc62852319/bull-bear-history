@@ -63,7 +63,7 @@ function splitDate(name) {
     return { y, m, d };
 }
 
-// ORIGINAL WORKING VERSION — NO SORTING, NO MERGING CHANGES
+// ORIGINAL WORKING VERSION + 前收市價 label
 function extractData(json) {
     const price = [];
     const bull = [];
@@ -91,6 +91,23 @@ function extractData(json) {
 
 function drawChart(price, bull, bear, date, json) {
     const chart = echarts.init(document.getElementById("chart"));
+
+    // ⭐ 前收市價
+    const prevClose = Math.round(Number(json.furtherData.hsilast));
+
+    // Find which price band contains 前收市價
+    let prevIndex = -1;
+    price.forEach((label, i) => {
+        const [from, to] = label.split(" - ").map(Number);
+        if (prevClose >= from && prevClose <= to) {
+            prevIndex = i;
+        }
+    });
+
+    // Vertical position for floating label
+    const prevPos = prevIndex >= 0
+        ? ((prevIndex + 0.5) / price.length) * 100
+        : 50;
 
     chart.setOption({
         title: { text: date, left: "center" },
@@ -125,6 +142,19 @@ Total: ${total}
             type: "value",
             name: "Volume"
         },
+
+        /* ⭐ 前收市價 floating label */
+        graphic: prevIndex >= 0 ? [{
+            type: "text",
+            left: "center",
+            top: prevPos + "%",
+            style: {
+                text: `前收市價: ${prevClose}`,
+                fill: "#000",
+                font: "bold 16px Arial",
+                textAlign: "center"
+            }
+        }] : [],
 
         series: [
             {
