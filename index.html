@@ -1,80 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bull / Bear History</title>
-
-<!-- ECharts -->
-<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #ffe6f2;
-        margin: 0;
-        padding: 0;
-        text-align: center;
-    }
-    h1 {
-        margin-top: 20px;
-        color: #cc0066;
-    }
-    #controls {
-        margin: 20px;
-    }
-    label {
-        font-size: 16px;
-        margin-right: 8px;
-        color: #333;
-    }
-    #dateSelector {
-        padding: 8px 12px;
-        font-size: 16px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-    }
-    #chart {
-        width: 95%;
-        height: 650px;
-        margin: 20px auto;
-        background: white;
-        border-radius: 10px;
-        padding: 10px;
-    }
-</style>
-</head>
-
-<body>
-<h1>Bull / Bear History</h1>
-
-<div id="controls">
-    <label for="dateSelector">Select date:</label>
-    <select id="dateSelector">
-        <option value="">Loading...</option>
-    </select>
-</div>
-
-<div id="chart"></div>
-
 <script>
 async function loadJSON(url) {
     const res = await fetch(url);
     return res.json();
 }
 
-// Get list of JSON files from your GitHub repo (data/cbbc folder)
+// Load all JSON filenames from GitHub
 async function loadAllFiles() {
     const apiUrl = "https://api.github.com/repos/rc62852319/bull-bear-history/contents/data/cbbc";
     const list = await loadJSON(apiUrl);
 
-    const files = list
+    return list
         .filter(f => f.name.endsWith(".json"))
-        .map(f => f.name)
+        .map(f => f.name.replace(".json", "")) // remove .json
         .sort()
-        .reverse(); // latest first
+        .reverse();
+}
 
-    return files;
+// Extract year, month, day from "YYYY-MM-DD"
+function splitDate(name) {
+    const [y, m, d] = name.split("-");
+    return { y, m, d };
 }
 
 function extractData(json) {
@@ -104,15 +49,13 @@ function extractData(json) {
 
 function computeHeavyZones(values) {
     const sorted = [...values].sort((a, b) => b - a);
-    const threshold = sorted[Math.floor(values.length * 0.1)] || 0;
-    return threshold;
+    return sorted[Math.floor(values.length * 0.1)] || 0;
 }
 
 function drawChart(price, bull, bear, date, json) {
     const chart = echarts.init(document.getElementById("chart"));
 
     const lastPrice = Number(json.furtherData.hsilast);
-
     const bullHeavy = computeHeavyZones(bull);
     const bearHeavy = computeHeavyZones(bear);
 
@@ -125,11 +68,8 @@ function drawChart(price, bull, bear, date, json) {
     const sumBull = json.furtherData.sumBull.map(Number);
     const sumBear = json.furtherData.sumBear.map(Number);
 
-    const option = {
-        title: {
-            text: `Bull / Bear Distribution — ${date}`,
-            left: "center"
-        },
+    chart.setOption({
+        title: { text: `Bull / Bear Distribution — ${date}`, left: "center" },
         tooltip: {
             trigger: "axis",
             formatter: function (params) {
@@ -150,98 +90,101 @@ ${heavy}
                 `;
             }
         },
-        legend: {
-            data: ["Bull", "Bear", "Bull Trend", "Bear Trend"],
-            top: 30
-        },
-        xAxis: {
-            type: "category",
-            data: price
-        },
+        legend: { data: ["Bull", "Bear", "Bull Trend", "Bear Trend"], top: 30 },
+        xAxis: { type: "category", data: price },
         yAxis: [
             { type: "value", name: "Volume" },
             { type: "value", name: "Trend", position: "right" }
         ],
         series: [
-            {
-                name: "Bull",
-                type: "bar",
-                data: bull,
-                itemStyle: { color: "#ff66b3" }
-            },
-            {
-                name: "Bear",
-                type: "bar",
-                data: bear,
-                itemStyle: { color: "#6666ff" }
-            },
-            {
-                name: "Bull Trend",
-                type: "line",
-                yAxisIndex: 1,
-                smooth: true,
-                data: sumBull,
-                itemStyle: { color: "#cc0066" }
-            },
-            {
-                name: "Bear Trend",
-                type: "line",
-                yAxisIndex: 1,
-                smooth: true,
-                data: sumBear,
-                itemStyle: { color: "#0033cc" }
-            },
-            {
-                type: "markLine",
-                name: "Last Price",
-                symbol: "none",
-                lineStyle: { color: "red", width: 2, type: "solid" },
-                data: [
-                    {
-                        xAxis: price.findIndex(p => p.includes(lastPrice.toFixed(0))),
-                        label: { formatter: `Last Price: ${lastPrice}` }
-                    }
-                ]
-            }
+            { name: "Bull", type: "bar", data: bull, itemStyle: { color: "#ff66b3" } },
+            { name: "Bear", type: "bar", data: bear, itemStyle: { color: "#6666ff" } },
+            { name: "Bull Trend", type: "line", yAxisIndex: 1, smooth: true, data: sumBull, itemStyle: { color: "#cc0066" } },
+            { name: "Bear Trend", type: "line", yAxisIndex: 1, smooth: true, data: sumBear, itemStyle: { color: "#0033cc" } }
         ]
-    };
-
-    chart.setOption(option);
+    });
 }
 
 async function init() {
-    const selector = document.getElementById("dateSelector");
-    selector.innerHTML = "<option value=''>Loading...</option>";
-
     const files = await loadAllFiles();
 
-    selector.innerHTML = "";
-    files.forEach(f => {
-        const date = f.replace(".json", "");
-        const opt = document.createElement("option");
-        opt.value = f;
-        opt.textContent = date;
-        selector.appendChild(opt);
+    // Build dropdowns
+    const years = new Set();
+    const months = {};
+    const days = {};
+
+    files.forEach(name => {
+        const { y, m, d } = splitDate(name);
+
+        years.add(y);
+
+        if (!months[y]) months[y] = new Set();
+        months[y].add(m);
+
+        if (!days[y]) days[y] = {};
+        if (!days[y][m]) days[y][m] = new Set();
+        days[y][m].add(d);
     });
 
-    async function loadSelected() {
-        const file = selector.value;
-        if (!file) return;
-        const date = file.replace(".json", "");
-        const json = await loadJSON(`data/cbbc/${file}`);
-        const { price, bull, bear } = extractData(json);
-        drawChart(price, bull, bear, date, json);
+    // Create dropdowns
+    const controls = document.getElementById("controls");
+    controls.innerHTML = `
+        <label>Year:</label>
+        <select id="yearSel"></select>
+        <label>Month:</label>
+        <select id="monthSel"></select>
+        <label>Date:</label>
+        <select id="daySel"></select>
+    `;
+
+    const yearSel = document.getElementById("yearSel");
+    const monthSel = document.getElementById("monthSel");
+    const daySel = document.getElementById("daySel");
+
+    // Populate year dropdown
+    [...years].sort().reverse().forEach(y => {
+        yearSel.innerHTML += `<option value="${y}">${y}</option>`;
+    });
+
+    function updateMonths() {
+        const y = yearSel.value;
+        monthSel.innerHTML = "";
+        [...months[y]].sort().forEach(m => {
+            monthSel.innerHTML += `<option value="${m}">${m}</option>`;
+        });
+        updateDays();
     }
 
-    selector.addEventListener("change", loadSelected);
+    function updateDays() {
+        const y = yearSel.value;
+        const m = monthSel.value;
+        daySel.innerHTML = "";
+        [...days[y][m]].sort().forEach(d => {
+            daySel.innerHTML += `<option value="${d}">${d}</option>`;
+        });
+        loadSelected();
+    }
 
-    // Default to the latest file (first in the sorted list)
-    selector.value = files[0];
-    loadSelected();
+    async function loadSelected() {
+        const y = yearSel.value;
+        const m = monthSel.value;
+        const d = daySel.value;
+
+        if (!y || !m || !d) return;
+
+        const filename = `${y}-${m}-${d}.json`;
+        const json = await loadJSON(`data/cbbc/${filename}`);
+        const { price, bull, bear } = extractData(json);
+
+        drawChart(price, bull, bear, `${y}-${m}-${d}`, json);
+    }
+
+    yearSel.addEventListener("change", updateMonths);
+    monthSel.addEventListener("change", updateDays);
+    daySel.addEventListener("change", loadSelected);
+
+    // Initialize
+    updateMonths();
 }
-
 init();
 </script>
-
-</body>
-</html>
