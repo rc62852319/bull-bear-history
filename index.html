@@ -17,7 +17,7 @@
     }
     h1 {
         margin-top: 20px;
-        color: #cc0066;
+        color: #000000; /* BLACK TITLE */
     }
     #controls {
         margin: 20px;
@@ -63,7 +63,7 @@ function splitDate(name) {
     return { y, m, d };
 }
 
-// ⭐ FIXED: MERGE bull + bear into one row per price band
+// ⭐ MERGE bull + bear into one row per price band
 function extractData(json) {
     const map = {};
 
@@ -93,6 +93,18 @@ function extractData(json) {
 
 function drawChart(price, bull, bear, date, json) {
     const chart = echarts.init(document.getElementById("chart"));
+
+    // ⭐ 前收市價 (previous close)
+    const prevClose = Math.round(Number(json.furtherData.hsilast));
+
+    // Find which price band contains 前收市價
+    let prevIndex = -1;
+    price.forEach((label, i) => {
+        const [from, to] = label.split(" - ").map(Number);
+        if (prevClose >= from && prevClose <= to) {
+            prevIndex = i;
+        }
+    });
 
     chart.setOption({
         title: { text: date, left: "center" },
@@ -148,6 +160,23 @@ Total: ${bull[i] + bear[i]}
                     color: "#006400",
                     fontWeight: "bold"
                 }
+            },
+
+            /* ⭐ ONLY TEXT — NO LINE */
+            {
+                type: "scatter",
+                data: [0],
+                label: {
+                    show: true,
+                    formatter: `前收市價: ${prevClose}`,
+                    color: "#000",
+                    fontWeight: "bold",
+                    fontSize: 16,
+                    position: "right"
+                },
+                symbolSize: 0,
+                tooltip: { show: false },
+                encode: { y: prevIndex }
             }
         ]
     });
