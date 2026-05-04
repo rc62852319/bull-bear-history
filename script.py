@@ -4,7 +4,10 @@ from datetime import datetime, timedelta
 
 # --- 1. Get Hong Kong date ---
 # HK = UTC+8
-hk_time = datetime.utcnow() + timedelta(hours=8)
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+hk_time = datetime.now(ZoneInfo("Asia/Hong_Kong"))
 date_str = hk_time.strftime("%Y-%m-%d")
 
 # --- 2. HSBC JSON endpoint (your confirmed working URL) ---
